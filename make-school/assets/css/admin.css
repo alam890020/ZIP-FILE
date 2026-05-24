@@ -1,0 +1,94 @@
+/*!
+ * MAKE SCHOOL — WP-Admin stylesheet.
+ * Tailored to live alongside core admin styles; only adds presentational
+ * polish for the plugin's own screens.
+ */
+
+.make-school-wrap { color: #1f2937; }
+
+.make-school-wrap h1 { margin-bottom: 18px; }
+
+/* KPI grid (admin dashboard). */
+.make-school-wrap .make-school-kpi-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+	gap: 12px;
+	margin: 16px 0 24px;
+}
+.make-school-wrap .make-school-kpi {
+	background: #fff;
+	border: 1px solid #e5e7eb;
+	border-radius: 8px;
+	padding: 14px 16px;
+	box-shadow: 0 1px 2px rgba(15, 23, 42, .04);
+}
+.make-school-wrap .make-school-kpi span {
+	display: block;
+	font-size: 11px;
+	letter-spacing: .06em;
+	text-transform: uppercase;
+	color: #6b7280;
+	margin-bottom: 4px;
+}
+.make-school-wrap .make-school-kpi strong {
+	font-size: 22px;
+	font-weight: 700;
+	color: #111827;
+}
+
+/* Pills (status badges). */
+.make-school-wrap .make-school-pill {
+	display: inline-block;
+	padding: 3px 9px;
+	border-radius: 999px;
+	font-size: 11px;
+	font-weight: 600;
+	letter-spacing: .04em;
+	text-transform: uppercase;
+	background: #f3f4f6;
+	color: #4b5563;
+	border: 1px solid #e5e7eb;
+}
+.make-school-wrap .make-school-pill-active,
+.make-school-wrap .make-school-pill-approved,
+.make-school-wrap .make-school-pill-paid,
+.make-school-wrap .make-school-pill-published,
+.make-school-wrap .make-school-pill-present { background: #e7f6ec; color: #1d6f42; border-color: rgba(29, 111, 66, .15); }
+.make-school-wrap .make-school-pill-pending,
+.make-school-wrap .make-school-pill-scheduled,
+.make-school-wrap .make-school-pill-partially_paid,
+.make-school-wrap .make-school-pill-late { background: #fff7e0; color: #a56500; border-color: rgba(165, 101, 0, .15); }
+.make-school-wrap .make-school-pill-rejected,
+.make-school-wrap .make-school-pill-unpaid,
+.make-school-wrap .make-school-pill-absent,
+.make-school-wrap .make-school-pill-inactive { background: #fdecec; color: #b32d2e; border-color: rgba(179, 45, 46, .15); }
+.make-school-wrap .make-school-pill-completed,
+.make-school-wrap .make-school-pill-in_progress { background: #e6f1f9; color: #1f6fb2; border-color: rgba(31, 111, 178, .15); }
+
+/* Cards (admission detail / invoice view). */
+.make-school-wrap .make-school-card {
+	background: #fff;
+	border: 1px solid #e5e7eb;
+	border-radius: 8px;
+	padding: 18px 20px;
+	box-shadow: 0 1px 2px rgba(15, 23, 42, .04);
+	margin-bottom: 18px;
+}
+.make-school-wrap .make-school-card h2,
+.make-school-wrap .make-school-card h3 { margin-top: 0; }
+
+/* Inline filter forms. */
+.make-school-wrap .make-school-inline-form {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 8px;
+	margin: 8px 0 14px;
+}
+
+/* Soft form (used for our own forms). */
+.make-school-wrap .make-school-form { background: #fff; padding: 18px 20px; border-radius: 8px; border: 1px solid #e5e7eb; }
+.make-school-wrap .make-school-form .form-table th { width: 220px; }
+
+/* Subsubsub style preserved for filter strips (admissions). */
+.make-school-wrap .subsubsub { margin-bottom: 0; }
