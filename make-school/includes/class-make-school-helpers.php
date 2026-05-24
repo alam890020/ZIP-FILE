@@ -51,6 +51,7 @@ class Make_School_Helpers {
 			'default_pass_mark'         => 35,
 			'school_name'               => get_bloginfo( 'name' ),
 			'login_page_id'             => 0,
+			'admission_page_id'         => 0,
 			'student_dashboard_page_id' => 0,
 			'teacher_dashboard_page_id' => 0,
 		);
@@ -598,6 +599,22 @@ class Make_School_Helpers {
 			}
 		}
 		return wp_login_url();
+	}
+
+	/**
+	 * Resolve the URL of the configured admission form page.
+	 *
+	 * @return string Empty string if no page is configured.
+	 */
+	public static function admission_form_url() {
+		$id = (int) self::setting( 'admission_page_id', 0 );
+		if ( $id ) {
+			$link = get_permalink( $id );
+			if ( $link ) {
+				return $link;
+			}
+		}
+		return '';
 	}
 
 	/**

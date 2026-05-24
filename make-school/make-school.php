@@ -162,8 +162,128 @@ final class Make_School_Plugin {
 		$this->register_roles();
 		$this->seed_default_options();
 		$this->seed_default_fee_types();
+		$this->ensure_default_pages();
 
 		flush_rewrite_rules();
+	}
+
+	/**
+	 * Auto-create the four front-end pages with the correct shortcodes if
+	 * they don't already exist, and write their IDs into settings so the
+	 * redirection engine routes work out-of-the-box.
+	 *
+	 * Idempotent: safe to call repeatedly. Pages are matched by an
+	 * internal slug-style meta key so renaming the page in WordPress
+	 * never breaks the link.
+	 *
+	 * @return void
+	 */
+	public function ensure_default_pages() {
+		$wanted = array(
+			array(
+				'meta_key'  => 'make_school_page_login',
+				'title'     => __( 'School Login', 'make-school' ),
+				'slug'      => 'school-login',
+				'shortcode' => '[make_school_login_form]',
+				'setting'   => 'login_page_id',
+			),
+			array(
+				'meta_key'  => 'make_school_page_admission',
+				'title'     => __( 'Admission Form', 'make-school' ),
+				'slug'      => 'admission-form',
+				'shortcode' => '[make_school_admission_form]',
+				'setting'   => 'admission_page_id',
+			),
+			array(
+				'meta_key'  => 'make_school_page_student',
+				'title'     => __( 'Student Dashboard', 'make-school' ),
+				'slug'      => 'student-dashboard',
+				'shortcode' => '[make_school_student_dashboard]',
+				'setting'   => 'student_dashboard_page_id',
+			),
+			array(
+				'meta_key'  => 'make_school_page_teacher',
+				'title'     => __( 'Teacher Dashboard', 'make-school' ),
+				'slug'      => 'teacher-dashboard',
+				'shortcode' => '[make_school_teacher_dashboard]',
+				'setting'   => 'teacher_dashboard_page_id',
+			),
+		);
+
+		$settings = get_option( 'make_school_settings', array() );
+		if ( ! is_array( $settings ) ) {
+			$settings = array();
+		}
+
+		foreach ( $wanted as $row ) {
+			$existing_id = $this->find_page_by_meta( $row['meta_key'] );
+
+			// Fallback — also tolerate a page whose post_content already
+			// contains the shortcode (e.g. created manually).
+			if ( ! $existing_id ) {
+				$matches = get_posts(
+					array(
+						'post_type'      => 'page',
+						'post_status'    => array( 'publish', 'draft', 'private' ),
+						'numberposts'    => 1,
+						's'              => $row['shortcode'],
+						'fields'         => 'ids',
+						'no_found_rows'  => true,
+					)
+				);
+				if ( ! empty( $matches ) ) {
+					$existing_id = (int) $matches[0];
+					update_post_meta( $existing_id, $row['meta_key'], 1 );
+				}
+			}
+
+			if ( ! $existing_id ) {
+				$page_id = wp_insert_post(
+					array(
+						'post_title'     => $row['title'],
+						'post_name'      => $row['slug'],
+						'post_status'    => 'publish',
+						'post_type'      => 'page',
+						'post_content'   => $row['shortcode'],
+						'comment_status' => 'closed',
+						'ping_status'    => 'closed',
+					),
+					true
+				);
+				if ( ! is_wp_error( $page_id ) && $page_id ) {
+					update_post_meta( (int) $page_id, $row['meta_key'], 1 );
+					$existing_id = (int) $page_id;
+				}
+			}
+
+			if ( $existing_id ) {
+				$settings[ $row['setting'] ] = (int) $existing_id;
+			}
+		}
+
+		update_option( 'make_school_settings', $settings );
+	}
+
+	/**
+	 * Locate a page previously created by ensure_default_pages().
+	 *
+	 * @param string $meta_key Marker meta key.
+	 * @return int Page ID or 0.
+	 */
+	private function find_page_by_meta( $meta_key ) {
+		$ids = get_posts(
+			array(
+				'post_type'      => 'page',
+				'post_status'    => array( 'publish', 'draft', 'private' ),
+				'numberposts'    => 1,
+				'meta_key'       => sanitize_key( $meta_key ), // phpcs:ignore WordPress.DB.SlowDBQuery
+				'fields'         => 'ids',
+				'no_found_rows'  => true,
+				'orderby'        => 'ID',
+				'order'          => 'ASC',
+			)
+		);
+		return $ids ? (int) $ids[0] : 0;
 	}
 
 	/**
@@ -305,6 +425,7 @@ final class Make_School_Plugin {
 				'default_pass_mark'    => 35,
 				'school_name'          => get_bloginfo( 'name' ),
 				'login_page_id'        => 0,
+				'admission_page_id'    => 0,
 				'student_dashboard_page_id' => 0,
 				'teacher_dashboard_page_id' => 0,
 			)

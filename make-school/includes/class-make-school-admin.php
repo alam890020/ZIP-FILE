@@ -152,6 +152,9 @@ class Make_School_Admin {
 				case 'save_settings':
 					$this->save_settings();
 					break;
+				case 'create_pages':
+					$this->create_pages();
+					break;
 			}
 		}
 
@@ -232,8 +235,117 @@ class Make_School_Admin {
 				<li><code>[make_school_student_dashboard]</code> — <?php esc_html_e( 'Student / Parent dashboard.', 'make-school' ); ?></li>
 				<li><code>[make_school_teacher_dashboard]</code> — <?php esc_html_e( 'Teacher dashboard with attendance, marks and LMS.', 'make-school' ); ?></li>
 			</ul>
+
+			<?php $this->render_pages_panel(); ?>
 		</div>
 		<?php
+	}
+
+	/**
+	 * Pages panel — shows the four front-end pages, their URLs, and a
+	 * one-click "Create / Restore Pages" button that hits
+	 * Make_School_Plugin::ensure_default_pages().
+	 *
+	 * @return void
+	 */
+	private function render_pages_panel() {
+		$pages = array(
+			array(
+				'meta'      => 'make_school_page_admission',
+				'shortcode' => '[make_school_admission_form]',
+				'label'     => __( 'Admission Form', 'make-school' ),
+				'setting'   => 'admission_page_id',
+			),
+			array(
+				'meta'      => 'make_school_page_login',
+				'shortcode' => '[make_school_login_form]',
+				'label'     => __( 'School Login', 'make-school' ),
+				'setting'   => 'login_page_id',
+			),
+			array(
+				'meta'      => 'make_school_page_student',
+				'shortcode' => '[make_school_student_dashboard]',
+				'label'     => __( 'Student Dashboard', 'make-school' ),
+				'setting'   => 'student_dashboard_page_id',
+			),
+			array(
+				'meta'      => 'make_school_page_teacher',
+				'shortcode' => '[make_school_teacher_dashboard]',
+				'label'     => __( 'Teacher Dashboard', 'make-school' ),
+				'setting'   => 'teacher_dashboard_page_id',
+			),
+		);
+
+		$settings = Make_School_Helpers::settings();
+		?>
+		<h2><?php esc_html_e( 'Front-end pages', 'make-school' ); ?></h2>
+		<p class="description">
+			<?php esc_html_e( 'These are the pages your visitors interact with. If any are missing, click "Create / Restore Pages" — the plugin will create them automatically with the right shortcode inside.', 'make-school' ); ?>
+		</p>
+		<table class="wp-list-table widefat fixed striped" style="max-width:920px;">
+			<thead><tr>
+				<th style="width:200px;"><?php esc_html_e( 'Page', 'make-school' ); ?></th>
+				<th><?php esc_html_e( 'Shortcode', 'make-school' ); ?></th>
+				<th><?php esc_html_e( 'URL', 'make-school' ); ?></th>
+				<th style="width:160px;"><?php esc_html_e( 'Status', 'make-school' ); ?></th>
+			</tr></thead>
+			<tbody>
+				<?php foreach ( $pages as $p ) :
+					$page_id = isset( $settings[ $p['setting'] ] ) ? (int) $settings[ $p['setting'] ] : 0;
+					$post    = $page_id ? get_post( $page_id ) : null;
+					$exists  = ( $post && 'page' === $post->post_type && 'trash' !== $post->post_status );
+					$url     = $exists ? get_permalink( $page_id ) : '';
+					$edit    = $exists ? get_edit_post_link( $page_id ) : '';
+					?>
+					<tr>
+						<td><strong><?php echo esc_html( $p['label'] ); ?></strong></td>
+						<td><code><?php echo esc_html( $p['shortcode'] ); ?></code></td>
+						<td>
+							<?php if ( $url ) : ?>
+								<a href="<?php echo esc_url( $url ); ?>" target="_blank" rel="noopener"><?php echo esc_html( $url ); ?></a>
+								<?php if ( $edit ) : ?>
+									&nbsp;<a class="button button-small" href="<?php echo esc_url( $edit ); ?>"><?php esc_html_e( 'Edit', 'make-school' ); ?></a>
+								<?php endif; ?>
+							<?php else : ?>
+								—
+							<?php endif; ?>
+						</td>
+						<td>
+							<?php if ( $exists ) : ?>
+								<span class="make-school-pill make-school-pill-active"><?php esc_html_e( 'Live', 'make-school' ); ?></span>
+							<?php else : ?>
+								<span class="make-school-pill make-school-pill-rejected"><?php esc_html_e( 'Missing', 'make-school' ); ?></span>
+							<?php endif; ?>
+						</td>
+					</tr>
+				<?php endforeach; ?>
+			</tbody>
+		</table>
+
+		<form method="post" style="margin-top:14px;">
+			<?php wp_nonce_field( self::NONCE_ACTION ); ?>
+			<input type="hidden" name="make_school_action" value="create_pages" />
+			<button type="submit" class="button button-primary">
+				<?php esc_html_e( 'Create / Restore Pages', 'make-school' ); ?>
+			</button>
+			<span class="description"><?php esc_html_e( 'Idempotent — safe to click multiple times. Only missing pages will be created.', 'make-school' ); ?></span>
+		</form>
+		<?php
+	}
+
+	/**
+	 * Handle the "Create / Restore Pages" POST action.
+	 *
+	 * @return void
+	 */
+	private function create_pages() {
+		check_admin_referer( self::NONCE_ACTION );
+
+		// The bootstrap class owns the canonical creation routine.
+		make_school()->ensure_default_pages();
+
+		$this->push_flash( __( 'Pages created or verified. Their URLs are listed below.', 'make-school' ) );
+		$this->redirect( admin_url( 'admin.php?page=make-school' ) );
 	}
 
 	/* =====================================================================
@@ -848,6 +960,16 @@ class Make_School_Admin {
 								<?php endforeach; ?>
 							</select>
 						</td></tr>
+					<tr><th><label for="ms-admission-page"><?php esc_html_e( 'Admission form page', 'make-school' ); ?></label></th>
+						<td>
+							<select id="ms-admission-page" name="settings[admission_page_id]">
+								<option value="0"><?php esc_html_e( '— None —', 'make-school' ); ?></option>
+								<?php foreach ( $pages as $p ) : ?>
+									<option value="<?php echo esc_attr( (string) $p->ID ); ?>" <?php selected( (int) $s['admission_page_id'], (int) $p->ID ); ?>><?php echo esc_html( $p->post_title ); ?></option>
+								<?php endforeach; ?>
+							</select>
+							<p class="description"><?php esc_html_e( 'The page that hosts [make_school_admission_form].', 'make-school' ); ?></p>
+						</td></tr>
 					<tr><th><label for="ms-student-page"><?php esc_html_e( 'Student / Parent dashboard', 'make-school' ); ?></label></th>
 						<td>
 							<select id="ms-student-page" name="settings[student_dashboard_page_id]">
@@ -905,6 +1027,7 @@ class Make_School_Admin {
 		$current['invoice_prefix']            = isset( $incoming['invoice_prefix'] ) ? sanitize_text_field( $incoming['invoice_prefix'] ) : $current['invoice_prefix'];
 		$current['default_pass_mark']         = isset( $incoming['default_pass_mark'] ) ? max( 0, min( 100, (int) $incoming['default_pass_mark'] ) ) : $current['default_pass_mark'];
 		$current['login_page_id']             = isset( $incoming['login_page_id'] ) ? absint( $incoming['login_page_id'] ) : 0;
+		$current['admission_page_id']         = isset( $incoming['admission_page_id'] ) ? absint( $incoming['admission_page_id'] ) : 0;
 		$current['student_dashboard_page_id'] = isset( $incoming['student_dashboard_page_id'] ) ? absint( $incoming['student_dashboard_page_id'] ) : 0;
 		$current['teacher_dashboard_page_id'] = isset( $incoming['teacher_dashboard_page_id'] ) ? absint( $incoming['teacher_dashboard_page_id'] ) : 0;
 		$current['enable_email_notify']       = ! empty( $incoming['enable_email_notify'] ) ? 1 : 0;
