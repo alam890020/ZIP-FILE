@@ -40,29 +40,62 @@ define( 'MAKE_SCHOOL_TEXT_DOMAIN', 'make-school' );
  * ------------------------------------------------------------------------- */
 
 require_once MAKE_SCHOOL_INCLUDES_DIR . 'class-make-school-db.php';
+require_once MAKE_SCHOOL_INCLUDES_DIR . 'class-make-school-helpers.php';
+require_once MAKE_SCHOOL_INCLUDES_DIR . 'class-make-school-login.php';
+require_once MAKE_SCHOOL_INCLUDES_DIR . 'class-make-school-admin.php';
+require_once MAKE_SCHOOL_INCLUDES_DIR . 'class-make-school-admissions.php';
+require_once MAKE_SCHOOL_INCLUDES_DIR . 'class-make-school-dashboards.php';
+require_once MAKE_SCHOOL_INCLUDES_DIR . 'class-make-school-attendance.php';
+require_once MAKE_SCHOOL_INCLUDES_DIR . 'class-make-school-fees.php';
+require_once MAKE_SCHOOL_INCLUDES_DIR . 'class-make-school-exams.php';
+require_once MAKE_SCHOOL_INCLUDES_DIR . 'class-make-school-lms.php';
+require_once MAKE_SCHOOL_INCLUDES_DIR . 'class-make-school-ajax.php';
+require_once MAKE_SCHOOL_INCLUDES_DIR . 'class-make-school-assets.php';
 
 /**
- * Main plugin class.
+ * Main plugin class — singleton orchestrator.
  *
- * Handles bootstrapping, lifecycle hooks (activation / deactivation /
- * uninstall) and loading of sub-modules. Implemented as a singleton to
- * guarantee a single source of truth for the plugin runtime.
+ * Wires lifecycle hooks (activation / deactivation), bootstraps all
+ * sub-modules at runtime, registers the four custom user roles, and
+ * seeds the default options used across the plugin.
  */
 final class Make_School_Plugin {
 
-	/**
-	 * Singleton instance.
-	 *
-	 * @var Make_School_Plugin|null
-	 */
+	/** @var Make_School_Plugin|null */
 	private static $instance = null;
 
-	/**
-	 * Database helper instance.
-	 *
-	 * @var Make_School_DB
-	 */
+	/** @var Make_School_DB */
 	public $db;
+
+	/** @var Make_School_Login */
+	public $login;
+
+	/** @var Make_School_Admin */
+	public $admin;
+
+	/** @var Make_School_Admissions */
+	public $admissions;
+
+	/** @var Make_School_Dashboards */
+	public $dashboards;
+
+	/** @var Make_School_Attendance */
+	public $attendance;
+
+	/** @var Make_School_Fees */
+	public $fees;
+
+	/** @var Make_School_Exams */
+	public $exams;
+
+	/** @var Make_School_LMS */
+	public $lms;
+
+	/** @var Make_School_Ajax */
+	public $ajax;
+
+	/** @var Make_School_Assets */
+	public $assets;
 
 	/**
 	 * Retrieve the singleton instance.
@@ -86,19 +119,27 @@ final class Make_School_Plugin {
 		register_activation_hook( MAKE_SCHOOL_PLUGIN_FILE, array( $this, 'on_activate' ) );
 		register_deactivation_hook( MAKE_SCHOOL_PLUGIN_FILE, array( $this, 'on_deactivate' ) );
 
-		// Runtime hooks.
+		// Bootstrap sub-modules. Each module attaches its own hooks
+		// in its constructor — no global state outside of these objects.
+		$this->login      = new Make_School_Login();
+		$this->admin      = new Make_School_Admin();
+		$this->admissions = new Make_School_Admissions();
+		$this->dashboards = new Make_School_Dashboards();
+		$this->attendance = new Make_School_Attendance();
+		$this->fees       = new Make_School_Fees();
+		$this->exams      = new Make_School_Exams();
+		$this->lms        = new Make_School_LMS();
+		$this->ajax       = new Make_School_Ajax();
+		$this->assets     = new Make_School_Assets();
+
 		add_action( 'plugins_loaded', array( $this, 'on_plugins_loaded' ) );
 		add_action( 'init', array( $this, 'on_init' ) );
 	}
 
-	/**
-	 * Block cloning.
-	 */
+	/** Block cloning. */
 	private function __clone() {}
 
-	/**
-	 * Block unserialization.
-	 */
+	/** Block unserialization. */
 	public function __wakeup() {
 		throw new \Exception( 'Cannot unserialize singleton.' );
 	}
@@ -108,28 +149,20 @@ final class Make_School_Plugin {
 	 * ------------------------------------------------------------------- */
 
 	/**
-	 * Activation handler — installs schema, registers roles, schedules tasks.
+	 * Activation handler — installs schema, registers roles, seeds options.
 	 *
 	 * @return void
 	 */
 	public function on_activate() {
-		// Capability check — only an actual administrator should ever trigger
-		// activation through the WordPress UI.
 		if ( ! current_user_can( 'activate_plugins' ) ) {
 			return;
 		}
 
-		// 1. Install / upgrade database tables via dbDelta().
 		$this->db->install();
-
-		// 2. Programmatically create the four dedicated user roles.
 		$this->register_roles();
-
-		// 3. Seed default options used by other modules.
 		$this->seed_default_options();
+		$this->seed_default_fee_types();
 
-		// 4. Flush rewrite rules so the future endpoints
-		//    (e.g. /teacher-dashboard, /student-dashboard) resolve cleanly.
 		flush_rewrite_rules();
 	}
 
@@ -143,9 +176,7 @@ final class Make_School_Plugin {
 			return;
 		}
 
-		// Clear scheduled cron events that may have been registered by sub-modules.
 		wp_clear_scheduled_hook( 'make_school_daily_cron' );
-
 		flush_rewrite_rules();
 	}
 
@@ -154,7 +185,7 @@ final class Make_School_Plugin {
 	 * ------------------------------------------------------------------- */
 
 	/**
-	 * Late-bound plugin bootstrapping (translations, integrations).
+	 * plugins_loaded — translations + in-place schema upgrade.
 	 *
 	 * @return void
 	 */
@@ -165,9 +196,6 @@ final class Make_School_Plugin {
 			dirname( MAKE_SCHOOL_PLUGIN_BASENAME ) . '/languages'
 		);
 
-		// Run an in-place schema upgrade if the stored DB version is older
-		// than the code-level DB version. This keeps installations on
-		// long-running sites in sync without requiring re-activation.
 		$installed = get_option( 'make_school_db_version' );
 		if ( $installed !== MAKE_SCHOOL_DB_VERSION ) {
 			$this->db->install();
@@ -175,16 +203,15 @@ final class Make_School_Plugin {
 	}
 
 	/**
-	 * Init-time bootstrapping. Sub-module classes (admissions, fees,
-	 * attendance, exams, lms) are loaded here in subsequent assignments.
+	 * init — fires the public 'make_school_loaded' hook.
 	 *
 	 * @return void
 	 */
 	public function on_init() {
 		/**
-		 * Fires when MAKE SCHOOL has finished its core boot. Other modules
-		 * (admin panels, shortcodes, AJAX handlers) should listen on this
-		 * action to register themselves cleanly.
+		 * Fires when MAKE SCHOOL has finished its core boot.
+		 *
+		 * @since 1.0.0
 		 */
 		do_action( 'make_school_loaded' );
 	}
@@ -194,12 +221,11 @@ final class Make_School_Plugin {
 	 * ------------------------------------------------------------------- */
 
 	/**
-	 * Register the 4 dedicated user roles with sensible default capabilities.
+	 * Register the 4 dedicated user roles.
 	 *
 	 * @return void
 	 */
 	private function register_roles() {
-		// Admin role — full plugin control, no WP super-admin powers.
 		add_role(
 			'make_school_admin',
 			__( 'School Admin', 'make-school' ),
@@ -213,7 +239,6 @@ final class Make_School_Plugin {
 			)
 		);
 
-		// Teacher role — attendance, marks entry, LMS distribution.
 		add_role(
 			'make_school_teacher',
 			__( 'Teacher', 'make-school' ),
@@ -226,7 +251,6 @@ final class Make_School_Plugin {
 			)
 		);
 
-		// Student role — read-only access to own ledger, attendance, LMS.
 		add_role(
 			'make_school_student',
 			__( 'Student', 'make-school' ),
@@ -236,7 +260,6 @@ final class Make_School_Plugin {
 			)
 		);
 
-		// Parent role — read-only access to mapped child's data.
 		add_role(
 			'make_school_parent',
 			__( 'Parent', 'make-school' ),
@@ -246,20 +269,21 @@ final class Make_School_Plugin {
 			)
 		);
 
-		// Mirror the management capabilities onto the WordPress administrator
-		// role so a site owner can always reach the plugin's admin screens.
+		// Mirror management caps onto the WP administrator role.
 		$wp_admin = get_role( 'administrator' );
 		if ( $wp_admin instanceof WP_Role ) {
 			$wp_admin->add_cap( 'make_school_manage_school' );
 			$wp_admin->add_cap( 'make_school_manage_fees' );
 			$wp_admin->add_cap( 'make_school_manage_exams' );
 			$wp_admin->add_cap( 'make_school_view_reports' );
+			$wp_admin->add_cap( 'make_school_take_attendance' );
+			$wp_admin->add_cap( 'make_school_enter_marks' );
+			$wp_admin->add_cap( 'make_school_publish_lessons' );
 		}
 	}
 
 	/**
-	 * Seed default options if absent. Uses add_option() so existing values
-	 * are never overwritten on re-activation.
+	 * Seed default plugin options.
 	 *
 	 * @return void
 	 */
@@ -274,11 +298,57 @@ final class Make_School_Plugin {
 			'make_school_settings',
 			array(
 				'currency_symbol'      => '$',
+				'currency_code'        => 'USD',
 				'roll_number_prefix'   => 'MS',
+				'invoice_prefix'       => 'INV',
 				'enable_email_notify'  => 1,
 				'default_pass_mark'    => 35,
+				'school_name'          => get_bloginfo( 'name' ),
+				'login_page_id'        => 0,
+				'student_dashboard_page_id' => 0,
+				'teacher_dashboard_page_id' => 0,
 			)
 		);
+	}
+
+	/**
+	 * Seed a baseline of standard fee types on first activation.
+	 *
+	 * @return void
+	 */
+	private function seed_default_fee_types() {
+		global $wpdb;
+		$table = $this->db->table( 'fee_types' );
+
+		$existing = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$table}" ); // phpcs:ignore
+		if ( $existing > 0 ) {
+			return;
+		}
+
+		$now      = current_time( 'mysql' );
+		$defaults = array(
+			array( 'Tuition Fee',   'tuition',   500.00 ),
+			array( 'Admission Fee', 'admission', 250.00 ),
+			array( 'Transport Fee', 'transport', 100.00 ),
+			array( 'Exam Fee',      'exam',       75.00 ),
+		);
+
+		foreach ( $defaults as $row ) {
+			$wpdb->insert( // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+				$table,
+				array(
+					'branch_id'      => 0,
+					'name'           => $row[0],
+					'slug'           => $row[1],
+					'default_amount' => $row[2],
+					'description'    => '',
+					'status'         => 'active',
+					'created_at'     => $now,
+					'updated_at'     => $now,
+				),
+				array( '%d', '%s', '%s', '%f', '%s', '%s', '%s', '%s' )
+			);
+		}
 	}
 }
 

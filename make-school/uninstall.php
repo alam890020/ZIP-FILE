@@ -28,6 +28,10 @@ $tables = array(
 	$wpdb->prefix . 'make_school_admissions',
 	$wpdb->prefix . 'make_school_invoices',
 	$wpdb->prefix . 'make_school_attendance',
+	$wpdb->prefix . 'make_school_fee_types',
+	$wpdb->prefix . 'make_school_exams',
+	$wpdb->prefix . 'make_school_marks',
+	$wpdb->prefix . 'make_school_lessons',
 );
 
 foreach ( $tables as $table ) {

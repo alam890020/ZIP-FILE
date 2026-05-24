@@ -37,6 +37,10 @@ class Make_School_DB {
 		'admissions'  => 'make_school_admissions',
 		'invoices'    => 'make_school_invoices',
 		'attendance'  => 'make_school_attendance',
+		'fee_types'   => 'make_school_fee_types',
+		'exams'       => 'make_school_exams',
+		'marks'       => 'make_school_marks',
+		'lessons'     => 'make_school_lessons',
 	);
 
 	/* ---------------------------------------------------------------------
@@ -92,6 +96,10 @@ class Make_School_DB {
 		dbDelta( $this->schema_admissions( $charset_collate ) );
 		dbDelta( $this->schema_invoices( $charset_collate ) );
 		dbDelta( $this->schema_attendance( $charset_collate ) );
+		dbDelta( $this->schema_fee_types( $charset_collate ) );
+		dbDelta( $this->schema_exams( $charset_collate ) );
+		dbDelta( $this->schema_marks( $charset_collate ) );
+		dbDelta( $this->schema_lessons( $charset_collate ) );
 
 		// Persist the DB version so future runs can short-circuit.
 		update_option( 'make_school_db_version', MAKE_SCHOOL_DB_VERSION );
@@ -300,6 +308,130 @@ class Make_School_DB {
 			KEY status (status),
 			KEY branch_id (branch_id),
 			KEY session (session)
+		) {$charset_collate};";
+	}
+
+	/**
+	 * Fee types — configurable fee buckets (Tuition, Admission, Transport, Exam, etc.).
+	 *
+	 * @param string $charset_collate Charset/collate clause.
+	 * @return string SQL.
+	 */
+	private function schema_fee_types( $charset_collate ) {
+		$table = $this->table( 'fee_types' );
+
+		return "CREATE TABLE {$table} (
+			id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+			branch_id BIGINT(20) UNSIGNED DEFAULT 0 NOT NULL,
+			name VARCHAR(120) NOT NULL,
+			slug VARCHAR(120) NOT NULL,
+			default_amount DECIMAL(12,2) DEFAULT 0.00 NOT NULL,
+			description TEXT NULL,
+			status VARCHAR(20) DEFAULT 'active' NOT NULL,
+			created_at DATETIME DEFAULT '0000-00-00 00:00:00' NOT NULL,
+			updated_at DATETIME DEFAULT '0000-00-00 00:00:00' NOT NULL,
+			PRIMARY KEY  (id),
+			KEY slug (slug),
+			KEY branch_id (branch_id),
+			KEY status (status)
+		) {$charset_collate};";
+	}
+
+	/**
+	 * Exams — exam terms scoped to branch / session / class.
+	 *
+	 * @param string $charset_collate Charset/collate clause.
+	 * @return string SQL.
+	 */
+	private function schema_exams( $charset_collate ) {
+		$table = $this->table( 'exams' );
+
+		return "CREATE TABLE {$table} (
+			id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+			branch_id BIGINT(20) UNSIGNED DEFAULT 0 NOT NULL,
+			session VARCHAR(20) DEFAULT '' NOT NULL,
+			class_id BIGINT(20) UNSIGNED DEFAULT 0 NOT NULL,
+			name VARCHAR(190) NOT NULL,
+			subjects TEXT NULL,
+			start_date DATE DEFAULT NULL,
+			end_date DATE DEFAULT NULL,
+			start_time VARCHAR(20) DEFAULT '' NOT NULL,
+			end_time VARCHAR(20) DEFAULT '' NOT NULL,
+			max_marks INT(11) DEFAULT 100 NOT NULL,
+			pass_marks INT(11) DEFAULT 35 NOT NULL,
+			venue VARCHAR(190) DEFAULT '' NOT NULL,
+			notes TEXT NULL,
+			status VARCHAR(20) DEFAULT 'scheduled' NOT NULL,
+			published TINYINT(1) DEFAULT 0 NOT NULL,
+			created_at DATETIME DEFAULT '0000-00-00 00:00:00' NOT NULL,
+			updated_at DATETIME DEFAULT '0000-00-00 00:00:00' NOT NULL,
+			PRIMARY KEY  (id),
+			KEY branch_id (branch_id),
+			KEY session (session),
+			KEY class_id (class_id),
+			KEY status (status)
+		) {$charset_collate};";
+	}
+
+	/**
+	 * Marks — one row per (exam, student, subject).
+	 *
+	 * @param string $charset_collate Charset/collate clause.
+	 * @return string SQL.
+	 */
+	private function schema_marks( $charset_collate ) {
+		$table = $this->table( 'marks' );
+
+		return "CREATE TABLE {$table} (
+			id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+			exam_id BIGINT(20) UNSIGNED NOT NULL,
+			student_user_id BIGINT(20) UNSIGNED NOT NULL,
+			subject VARCHAR(120) NOT NULL,
+			marks_obtained DECIMAL(6,2) DEFAULT 0.00 NOT NULL,
+			max_marks DECIMAL(6,2) DEFAULT 100.00 NOT NULL,
+			grade VARCHAR(10) DEFAULT '' NOT NULL,
+			remarks VARCHAR(255) DEFAULT '' NOT NULL,
+			entered_by BIGINT(20) UNSIGNED DEFAULT 0 NOT NULL,
+			created_at DATETIME DEFAULT '0000-00-00 00:00:00' NOT NULL,
+			updated_at DATETIME DEFAULT '0000-00-00 00:00:00' NOT NULL,
+			PRIMARY KEY  (id),
+			UNIQUE KEY exam_student_subject (exam_id,student_user_id,subject),
+			KEY exam_id (exam_id),
+			KEY student_user_id (student_user_id)
+		) {$charset_collate};";
+	}
+
+	/**
+	 * Lessons — LMS content (YouTube videos + PDF study materials).
+	 *
+	 * @param string $charset_collate Charset/collate clause.
+	 * @return string SQL.
+	 */
+	private function schema_lessons( $charset_collate ) {
+		$table = $this->table( 'lessons' );
+
+		return "CREATE TABLE {$table} (
+			id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+			branch_id BIGINT(20) UNSIGNED DEFAULT 0 NOT NULL,
+			session VARCHAR(20) DEFAULT '' NOT NULL,
+			class_id BIGINT(20) UNSIGNED DEFAULT 0 NOT NULL,
+			subject VARCHAR(120) DEFAULT '' NOT NULL,
+			title VARCHAR(190) NOT NULL,
+			type VARCHAR(20) DEFAULT 'video' NOT NULL,
+			youtube_id VARCHAR(40) DEFAULT '' NOT NULL,
+			file_url VARCHAR(255) DEFAULT '' NOT NULL,
+			description TEXT NULL,
+			posted_by BIGINT(20) UNSIGNED DEFAULT 0 NOT NULL,
+			status VARCHAR(20) DEFAULT 'published' NOT NULL,
+			created_at DATETIME DEFAULT '0000-00-00 00:00:00' NOT NULL,
+			updated_at DATETIME DEFAULT '0000-00-00 00:00:00' NOT NULL,
+			PRIMARY KEY  (id),
+			KEY branch_id (branch_id),
+			KEY session (session),
+			KEY class_id (class_id),
+			KEY subject (subject),
+			KEY type (type),
+			KEY status (status)
 		) {$charset_collate};";
 	}
 }

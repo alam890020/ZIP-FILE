@@ -1,0 +1,418 @@
+/*!
+ * MAKE SCHOOL — Front-end stylesheet.
+ * Mobile-first, theme-agnostic. Scoped under `.make-school-*` classes
+ * to avoid collisions with the active theme's own selectors.
+ */
+
+/* ---------- Tokens ---------- */
+:root {
+	--ms-primary: #2563eb;
+	--ms-primary-strong: #1d4ed8;
+	--ms-text: #1f2937;
+	--ms-muted: #6b7280;
+	--ms-border: #e5e7eb;
+	--ms-bg: #f8fafc;
+	--ms-card: #ffffff;
+	--ms-radius: 10px;
+	--ms-radius-sm: 6px;
+	--ms-shadow: 0 4px 20px rgba(15, 23, 42, 0.06);
+	--ms-shadow-md: 0 8px 30px rgba(15, 23, 42, 0.10);
+	--ms-success-fg: #1d6f42;
+	--ms-success-bg: #e7f6ec;
+	--ms-error-fg: #b32d2e;
+	--ms-error-bg: #fdecec;
+	--ms-warning-fg: #a56500;
+	--ms-warning-bg: #fff7e0;
+	--ms-info-fg: #1f6fb2;
+	--ms-info-bg: #e6f1f9;
+}
+
+/* ---------- Auth (login form) ---------- */
+.make-school-auth-wrap {
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	padding: 32px 16px;
+}
+.make-school-auth-card {
+	width: 100%;
+	max-width: 420px;
+	background: var(--ms-card);
+	border-radius: var(--ms-radius);
+	box-shadow: var(--ms-shadow);
+	padding: 32px 28px;
+	color: var(--ms-text);
+}
+.make-school-auth-brand {
+	text-align: center;
+	margin-bottom: 22px;
+}
+.make-school-auth-brand h2 { margin: 0 0 4px 0; font-size: 22px; font-weight: 700; }
+.make-school-auth-brand p { margin: 0; color: var(--ms-muted); font-size: 14px; }
+
+.make-school-auth-form .make-school-field { display: block; margin-bottom: 14px; }
+.make-school-auth-form button { width: 100%; }
+.make-school-auth-meta { text-align: center; margin-top: 14px; font-size: 13px; }
+.make-school-auth-meta a { color: var(--ms-muted); text-decoration: none; border-bottom: 1px dotted var(--ms-muted); }
+.make-school-auth-actions { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+
+/* ---------- Forms (shared) ---------- */
+.make-school-form-wrap {
+	max-width: 760px;
+	margin: 0 auto;
+}
+.make-school-form,
+.make-school-admission-form {
+	background: var(--ms-card);
+	padding: 24px;
+	border-radius: var(--ms-radius);
+	box-shadow: var(--ms-shadow);
+	color: var(--ms-text);
+}
+.make-school-form h3,
+.make-school-admission-form h3 {
+	margin: 18px 0 10px 0;
+	font-size: 14px;
+	letter-spacing: .04em;
+	text-transform: uppercase;
+	color: var(--ms-muted);
+	border-top: 1px solid var(--ms-border);
+	padding-top: 14px;
+}
+.make-school-form h3:first-of-type,
+.make-school-admission-form h3:first-of-type {
+	border-top: 0;
+	padding-top: 0;
+	margin-top: 0;
+}
+
+.make-school-field { display: block; margin-bottom: 14px; }
+.make-school-field > span {
+	display: block;
+	font-size: 13px;
+	color: var(--ms-muted);
+	margin-bottom: 6px;
+	font-weight: 500;
+}
+.make-school-field input[type="text"],
+.make-school-field input[type="email"],
+.make-school-field input[type="tel"],
+.make-school-field input[type="password"],
+.make-school-field input[type="number"],
+.make-school-field input[type="date"],
+.make-school-field input[type="time"],
+.make-school-field input[type="url"],
+.make-school-field select,
+.make-school-field textarea,
+.make-school-field input[type="file"] {
+	width: 100%;
+	padding: 10px 12px;
+	font-size: 14px;
+	border: 1px solid var(--ms-border);
+	border-radius: var(--ms-radius-sm);
+	background: #fff;
+	color: var(--ms-text);
+	transition: border-color .15s, box-shadow .15s;
+	box-sizing: border-box;
+}
+.make-school-field textarea { min-height: 90px; resize: vertical; }
+.make-school-field input:focus,
+.make-school-field select:focus,
+.make-school-field textarea:focus {
+	outline: 0;
+	border-color: var(--ms-primary);
+	box-shadow: 0 0 0 3px rgba(37, 99, 235, .15);
+}
+
+.make-school-checkbox {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	font-size: 14px;
+	margin: 8px 0 14px;
+	color: var(--ms-text);
+}
+
+.make-school-grid-2 {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 14px;
+}
+.make-school-inline-form {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 10px;
+	align-items: flex-end;
+	margin: 8px 0 14px;
+}
+.make-school-inline-form .make-school-field { margin: 0; min-width: 180px; }
+
+@media (max-width: 600px) {
+	.make-school-grid-2 { grid-template-columns: 1fr; }
+}
+
+/* ---------- Buttons ---------- */
+.make-school-btn {
+	display: inline-block;
+	padding: 10px 16px;
+	font-size: 14px;
+	font-weight: 600;
+	border-radius: var(--ms-radius-sm);
+	border: 1px solid transparent;
+	cursor: pointer;
+	text-decoration: none;
+	line-height: 1;
+	transition: background .15s, color .15s, border-color .15s, transform .05s;
+}
+.make-school-btn-primary {
+	background: var(--ms-primary);
+	color: #fff;
+}
+.make-school-btn-primary:hover { background: var(--ms-primary-strong); color: #fff; }
+.make-school-btn-primary:active { transform: translateY(1px); }
+.make-school-btn-ghost {
+	background: #fff;
+	color: var(--ms-text);
+	border-color: var(--ms-border);
+}
+.make-school-btn-ghost:hover { background: var(--ms-bg); }
+.make-school-btn + .make-school-btn { margin-left: 6px; }
+
+/* ---------- Alerts ---------- */
+.make-school-alert {
+	padding: 12px 14px;
+	border-radius: var(--ms-radius-sm);
+	font-size: 14px;
+	margin-bottom: 14px;
+	border: 1px solid transparent;
+}
+.make-school-alert-success { background: var(--ms-success-bg); color: var(--ms-success-fg); border-color: rgba(29, 111, 66, .15); }
+.make-school-alert-error   { background: var(--ms-error-bg); color: var(--ms-error-fg); border-color: rgba(179, 45, 46, .15); }
+.make-school-alert-warning { background: var(--ms-warning-bg); color: var(--ms-warning-fg); border-color: rgba(165, 101, 0, .15); }
+.make-school-alert-info    { background: var(--ms-info-bg); color: var(--ms-info-fg); border-color: rgba(31, 111, 178, .15); }
+
+/* ---------- Pills ---------- */
+.make-school-pill {
+	display: inline-block;
+	padding: 4px 10px;
+	border-radius: 999px;
+	font-size: 12px;
+	font-weight: 600;
+	letter-spacing: .04em;
+	text-transform: uppercase;
+	background: var(--ms-bg);
+	color: var(--ms-muted);
+	border: 1px solid var(--ms-border);
+}
+.make-school-pill-active,
+.make-school-pill-approved,
+.make-school-pill-paid,
+.make-school-pill-published,
+.make-school-pill-present { background: var(--ms-success-bg); color: var(--ms-success-fg); border-color: rgba(29, 111, 66, .15); }
+.make-school-pill-pending,
+.make-school-pill-scheduled,
+.make-school-pill-partially_paid,
+.make-school-pill-late { background: var(--ms-warning-bg); color: var(--ms-warning-fg); border-color: rgba(165, 101, 0, .15); }
+.make-school-pill-rejected,
+.make-school-pill-unpaid,
+.make-school-pill-absent,
+.make-school-pill-inactive { background: var(--ms-error-bg); color: var(--ms-error-fg); border-color: rgba(179, 45, 46, .15); }
+.make-school-pill-completed,
+.make-school-pill-in_progress { background: var(--ms-info-bg); color: var(--ms-info-fg); border-color: rgba(31, 111, 178, .15); }
+
+/* ---------- Dashboard layout ---------- */
+.make-school-dashboard {
+	max-width: 1080px;
+	margin: 0 auto;
+	color: var(--ms-text);
+}
+.make-school-dashboard-header {
+	display: flex;
+	justify-content: space-between;
+	gap: 14px;
+	flex-wrap: wrap;
+	background: var(--ms-card);
+	padding: 18px 22px;
+	border-radius: var(--ms-radius);
+	box-shadow: var(--ms-shadow);
+	margin-bottom: 14px;
+}
+.make-school-dashboard-header h2 { margin: 0 0 4px 0; font-size: 20px; }
+.make-school-dashboard-header p { margin: 0; color: var(--ms-muted); font-size: 14px; }
+.make-school-dashboard-actions { display: flex; gap: 8px; align-items: center; }
+
+.make-school-tabs {
+	display: flex;
+	gap: 6px;
+	flex-wrap: wrap;
+	margin-bottom: 14px;
+	background: var(--ms-card);
+	padding: 6px;
+	border-radius: var(--ms-radius);
+	box-shadow: var(--ms-shadow);
+}
+.make-school-tab {
+	padding: 8px 14px;
+	border-radius: var(--ms-radius-sm);
+	color: var(--ms-muted);
+	font-weight: 600;
+	font-size: 14px;
+	text-decoration: none;
+	transition: background .15s, color .15s;
+}
+.make-school-tab:hover { color: var(--ms-text); background: var(--ms-bg); }
+.make-school-tab.is-active { background: var(--ms-primary); color: #fff; }
+
+.make-school-dashboard-body {
+	background: var(--ms-card);
+	padding: 22px;
+	border-radius: var(--ms-radius);
+	box-shadow: var(--ms-shadow);
+}
+
+/* ---------- Cards ---------- */
+.make-school-card { background: transparent; }
+.make-school-card + .make-school-card { margin-top: 18px; }
+.make-school-card h3 { margin: 0 0 12px 0; font-size: 16px; }
+
+/* ---------- KPIs ---------- */
+.make-school-kpi-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+	gap: 12px;
+	margin-bottom: 6px;
+}
+.make-school-kpi {
+	background: var(--ms-bg);
+	border-radius: var(--ms-radius-sm);
+	padding: 14px 16px;
+	border: 1px solid var(--ms-border);
+}
+.make-school-kpi span {
+	display: block;
+	font-size: 12px;
+	letter-spacing: .04em;
+	text-transform: uppercase;
+	color: var(--ms-muted);
+	margin-bottom: 4px;
+}
+.make-school-kpi strong {
+	font-size: 22px;
+	font-weight: 700;
+	color: var(--ms-text);
+}
+
+/* ---------- Tables ---------- */
+.make-school-data-table {
+	width: 100%;
+	border-collapse: collapse;
+	margin-top: 6px;
+}
+.make-school-data-table th,
+.make-school-data-table td {
+	padding: 10px 12px;
+	border-bottom: 1px solid var(--ms-border);
+	text-align: left;
+	font-size: 14px;
+	vertical-align: middle;
+}
+.make-school-data-table th {
+	font-size: 12px;
+	letter-spacing: .04em;
+	text-transform: uppercase;
+	color: var(--ms-muted);
+	font-weight: 600;
+	background: var(--ms-bg);
+}
+.make-school-data-table tr:last-child td { border-bottom: 0; }
+
+.make-school-meta { font-size: 13px; color: var(--ms-muted); }
+.make-school-meta.make-school-error { color: var(--ms-error-fg); }
+.make-school-meta.make-school-success { color: var(--ms-success-fg); }
+
+/* ---------- Radio chips (attendance grid) ---------- */
+.make-school-radio {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	font-size: 13px;
+	margin-right: 8px;
+	color: var(--ms-text);
+}
+
+/* ---------- Chip strip (LMS subject filter) ---------- */
+.make-school-chip-strip {
+	display: flex;
+	gap: 8px;
+	flex-wrap: wrap;
+	margin-bottom: 14px;
+}
+.make-school-chip {
+	display: inline-block;
+	padding: 6px 12px;
+	border-radius: 999px;
+	border: 1px solid var(--ms-border);
+	background: var(--ms-card);
+	color: var(--ms-muted);
+	font-size: 13px;
+	text-decoration: none;
+	font-weight: 600;
+	transition: background .15s, color .15s, border-color .15s;
+}
+.make-school-chip:hover { color: var(--ms-text); background: var(--ms-bg); }
+.make-school-chip.is-active { background: var(--ms-primary); color: #fff; border-color: var(--ms-primary); }
+
+/* ---------- Lessons grid (LMS) ---------- */
+.make-school-lessons-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+	gap: 16px;
+}
+.make-school-lesson {
+	background: var(--ms-card);
+	border: 1px solid var(--ms-border);
+	border-radius: var(--ms-radius);
+	overflow: hidden;
+	display: flex;
+	flex-direction: column;
+}
+.make-school-lesson-media { background: #000; }
+.make-school-lesson-media .make-school-yt {
+	position: relative;
+	padding-bottom: 56.25%;
+	height: 0;
+	overflow: hidden;
+}
+.make-school-lesson-media iframe {
+	position: absolute;
+	top: 0; left: 0;
+	width: 100%; height: 100%;
+	border: 0;
+}
+.make-school-lesson-doc {
+	display: flex;
+	gap: 10px;
+	padding: 28px 18px;
+	background: var(--ms-bg);
+	color: var(--ms-text);
+	text-decoration: none;
+	font-weight: 600;
+	font-size: 14px;
+	border-bottom: 1px solid var(--ms-border);
+}
+.make-school-lesson-doc .dashicons { color: var(--ms-primary); font-size: 28px; height: 28px; width: 28px; }
+.make-school-lesson-meta {
+	padding: 14px 16px;
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+}
+.make-school-lesson-meta h4 { margin: 0; font-size: 15px; }
+.make-school-lesson-meta p { margin: 0; color: var(--ms-muted); font-size: 13px; line-height: 1.45; }
+.make-school-lesson-meta small { color: var(--ms-muted); font-size: 12px; }
+
+/* ---------- Print-only containers (receipt / report-card / admit-card) ---------- */
+@media print {
+	.make-school-tabs,
+	.make-school-dashboard-actions { display: none !important; }
+}
