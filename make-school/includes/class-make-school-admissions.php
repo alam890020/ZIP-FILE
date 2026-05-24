@@ -151,6 +151,18 @@ class Make_School_Admissions {
 					</select>
 				</label>
 
+				<h3><?php esc_html_e( 'Create your account', 'make-school' ); ?></h3>
+				<div class="make-school-grid-2">
+					<label class="make-school-field">
+						<span><?php esc_html_e( 'Username', 'make-school' ); ?> *</span>
+						<input type="text" name="username" required maxlength="60" autocomplete="username" />
+					</label>
+					<label class="make-school-field">
+						<span><?php esc_html_e( 'Password', 'make-school' ); ?> *</span>
+						<input type="password" name="user_password" required minlength="6" autocomplete="new-password" />
+					</label>
+				</div>
+
 				<h3><?php esc_html_e( 'Documents', 'make-school' ); ?></h3>
 				<div class="make-school-grid-2">
 					<label class="make-school-field">
@@ -212,6 +224,8 @@ class Make_School_Admissions {
 			'mobile'      => isset( $_POST['mobile'] ) ? sanitize_text_field( wp_unslash( $_POST['mobile'] ) ) : '',
 			'address'     => isset( $_POST['address'] ) ? sanitize_textarea_field( wp_unslash( $_POST['address'] ) ) : '',
 			'class_id'    => isset( $_POST['class_id'] ) ? absint( $_POST['class_id'] ) : 0,
+			'username'    => isset( $_POST['username'] ) ? sanitize_user( wp_unslash( $_POST['username'] ), true ) : '',
+			'password'    => isset( $_POST['user_password'] ) ? (string) wp_unslash( $_POST['user_password'] ) : '',
 		);
 
 		// Validate.
@@ -240,6 +254,45 @@ class Make_School_Admissions {
 		}
 		if ( empty( $_POST['agree'] ) ) {
 			$this->push_flash( __( 'Please confirm the declaration to continue.', 'make-school' ) );
+			$this->safe_back();
+			return;
+		}
+
+		// Validate username & password.
+		if ( '' === $data['username'] || '' === $data['password'] ) {
+			$this->push_flash( __( 'Username and password are required to create your account.', 'make-school' ) );
+			$this->safe_back();
+			return;
+		}
+		if ( strlen( $data['password'] ) < 6 ) {
+			$this->push_flash( __( 'Password must be at least 6 characters.', 'make-school' ) );
+			$this->safe_back();
+			return;
+		}
+		if ( username_exists( $data['username'] ) ) {
+			$this->push_flash( __( 'That username is already taken. Please choose another.', 'make-school' ) );
+			$this->safe_back();
+			return;
+		}
+		if ( email_exists( $data['email'] ) ) {
+			$this->push_flash( __( 'An account with this email already exists. Please use a different email or log in.', 'make-school' ) );
+			$this->safe_back();
+			return;
+		}
+
+		// Create the WP user immediately.
+		$new_user_id = wp_insert_user(
+			array(
+				'user_login'   => $data['username'],
+				'user_email'   => $data['email'],
+				'user_pass'    => $data['password'],
+				'display_name' => $data['full_name'],
+				'first_name'   => $data['full_name'],
+				'role'         => 'make_school_student',
+			)
+		);
+		if ( is_wp_error( $new_user_id ) ) {
+			$this->push_flash( $new_user_id->get_error_message() );
 			$this->safe_back();
 			return;
 		}
@@ -284,7 +337,7 @@ class Make_School_Admissions {
 				'document_url' => is_string( $document_url ) ? $document_url : '',
 				'notes'        => '',
 				'status'       => 'pending',
-				'user_id'      => 0,
+				'user_id'      => (int) $new_user_id,
 				'reviewed_by'  => 0,
 				'reviewed_at'  => null,
 				'created_at'   => $now,
@@ -297,6 +350,12 @@ class Make_School_Admissions {
 			$this->safe_back();
 			return;
 		}
+
+		// Store class/branch/session in user meta for module lookups.
+		update_user_meta( (int) $new_user_id, 'make_school_class_id', (int) $data['class_id'] );
+		update_user_meta( (int) $new_user_id, 'make_school_branch_id', $class ? (int) $class->branch_id : 0 );
+		update_user_meta( (int) $new_user_id, 'make_school_session', $class && $class->session ? (string) $class->session : Make_School_Helpers::current_session() );
+		update_user_meta( (int) $new_user_id, 'make_school_admission_id', (int) $wpdb->insert_id );
 
 		// Notify admin (best-effort, non-blocking on failure).
 		if ( (int) Make_School_Helpers::setting( 'enable_email_notify', 1 ) ) {
