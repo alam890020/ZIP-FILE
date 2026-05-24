@@ -431,21 +431,21 @@ class Make_School_Admissions {
 			: $wpdb->get_results( "SELECT * FROM {$table} ORDER BY created_at DESC LIMIT 200" ); // phpcs:ignore
 
 		?>
+		<?php
+		$base          = admin_url( 'admin.php?page=make-school-admissions' );
+		$status_tabs   = array( 'pending', 'approved', 'rejected', 'all' );
+		$last_tab      = end( $status_tabs );
+		?>
 		<ul class="subsubsub">
-			<?php
-			$base = admin_url( 'admin.php?page=make-school-admissions' );
-			foreach ( array( 'pending', 'approved', 'rejected', 'all' ) as $s ) :
-				$label = Make_School_Helpers::status_label( 'all' === $s ? '' : $s );
-				if ( 'all' === $s ) {
-					$label = __( 'All', 'make-school' );
-				}
+			<?php foreach ( $status_tabs as $s ) :
+				$label = ( 'all' === $s ) ? __( 'All', 'make-school' ) : Make_School_Helpers::status_label( $s );
 				?>
 				<li>
 					<a href="<?php echo esc_url( add_query_arg( 'status', $s, $base ) ); ?>"
 					   <?php echo $status === $s ? 'class="current"' : ''; ?>>
 						<?php echo esc_html( $label ); ?>
 					</a>
-					<?php echo end( array( 'pending', 'approved', 'rejected', 'all' ) ) !== $s ? '|' : ''; ?>
+					<?php echo $last_tab !== $s ? '|' : ''; ?>
 				</li>
 			<?php endforeach; ?>
 		</ul>
